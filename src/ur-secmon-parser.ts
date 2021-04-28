@@ -6,11 +6,19 @@ import VersionCompare from 'semver-compare'
 
 export class UrSecondaryMonitorParser {
   private _version: string
-  private _result: any
+  private _monitoringData: any
 
   constructor() {
     this._version = '0.0'
-    this._result = {}
+    this._monitoringData = {}
+  }
+
+  getVersion(): string {
+    return this._version
+  }
+
+  getData() {
+    return this._monitoringData
   }
 
   parse(data) {
@@ -333,7 +341,7 @@ export class UrSecondaryMonitorParser {
       }
     }
 
-    this._result = result
+    this._monitoringData = result
     return result
   }
 
