@@ -24,12 +24,12 @@ export class UrSecondaryMonitor {
     this._eventReceive = new EventEmitter()
   }
 
-  async connect(): Promise<void> {
+  async connect() {
     var socket = new Socket()
     socket.setKeepAlive(true, 60000)
     socket.on('data', data => {
       this._parser.parse(data)
-      this._eventReceive.emit('received')
+      this.emitReceivedEvent()
     })
 
     this.socket = new PromiseSocket(socket)
@@ -47,12 +47,12 @@ export class UrSecondaryMonitor {
     this.disconnect()
   }
 
-  async sendMessage(buf, size?): Promise<void> {
+  async sendMessage(buf, size?) {
     await this.socket.write(buf, size || buf.length)
   }
 
   // TODO: apply mutex and all functions with sendMessage should have an additional decorater like @urscript
-  async sendProgram(program: string): Promise<void> {
+  async sendProgram(program: string) {
     program += '\r\n'
     await this.sendMessage(program)
   }
@@ -65,59 +65,63 @@ export class UrSecondaryMonitor {
     return message
   }
 
-  async wait(timeout: number = Infinity): Promise<void> {
+  async wait(timeout: number = Infinity) {
     await pEvent(this._eventReceive, 'received', { timeout: timeout })
   }
 
-  async getMonitoringData(wait: boolean = false): Promise<any> {
+  emitReceivedEvent() {
+    this._eventReceive.emit('received')
+  }
+
+  async getMonitoringData(wait = false): Promise<any> {
     wait && (await this.wait())
     return this._parser.getData()
   }
 
-  async getJointData(wait: boolean = false): Promise<any> {
+  async getJointData(wait = false): Promise<any> {
     wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     return monitoringData?.JointData
   }
 
-  async getCatesianData(wait: boolean = false): Promise<any> {
+  async getCatesianData(wait = false): Promise<any> {
     wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     return monitoringData?.CartesianInfo || {}
   }
 
-  async getDigitalOut(nb: number, wait: boolean = false): Promise<boolean> {
+  async getDigitalOut(port: number, wait = false): Promise<boolean> {
     wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     let discreteOutputs = monitoringData?.MasterBoardData?.digitalOutputBits || 0
-    let mask = 1 << nb
+    let mask = 1 << port
     return (discreteOutputs & mask) === mask
   }
 
-  async getDigitalOutBits(wait: boolean = false): Promise<any> {
+  async getDigitalOutBits(wait = false): Promise<any> {
     wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     return monitoringData?.MasterBoardData?.digitalOutputBits || 0
   }
 
-  async getDigitialIn(nb: number, wait: boolean = false): Promise<boolean> {
+  async getDigitialIn(port: number, wait = false): Promise<boolean> {
     wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     let discreteInputs = monitoringData?.MasterBoardData?.digitalInputBits || 0
-    let mask = 1 << nb
+    let mask = 1 << port
     return (discreteInputs & mask) === mask
   }
 
-  async getDigitalInBits(wait: boolean = false): Promise<any> {
+  async getDigitalInBits(wait = false): Promise<any> {
     wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     return monitoringData?.MasterBoardData?.digitalInputBits || 0
   }
 
-  async getAnalogIn(nb: number, wait: boolean = false): Promise<any> {
+  async getAnalogIn(port: number, wait = false): Promise<any> {
     wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
-    if (nb === 0) {
+    if (port === 0) {
       return monitoringData?.MasterBoardData?.analogInput0 || 0
     } else {
       return monitoringData?.MasterBoardData?.analogInput1 || 0

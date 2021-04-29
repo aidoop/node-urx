@@ -1,17 +1,16 @@
 import AwaitLock from 'await-lock'
+import { mutex } from './decorators'
 import { UrSecondaryMonitor } from './ur-secmon'
 
 export class UrRobot {
-  private _dictLock
-  private _progQueueLock
+  public lock
+
   private _secmon: UrSecondaryMonitor
   private _maxFloatLength: number = 6
 
   constructor(serverIp) {
     // TODO: should use awaitlock
-    this._dictLock = new AwaitLock()
-    this._progQueueLock = new AwaitLock()
-
+    this.lock = new AwaitLock()
     this._secmon = new UrSecondaryMonitor(serverIp)
   }
 
@@ -27,8 +26,8 @@ export class UrRobot {
     return await this._secmon.isRunning(true)
   }
 
+  @mutex
   async sendProgram(program) {
-    console.log(program)
     await this._secmon.sendProgram(program)
   }
 
