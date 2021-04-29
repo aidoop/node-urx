@@ -1,8 +1,5 @@
-import { Socket } from 'net'
-import { PromiseSocket } from 'promise-socket'
 import AwaitLock from 'await-lock'
 import { UrSecondaryMonitor } from './ur-secmon'
-import { UrSecondaryMonitorParser } from './ur-secmon-parser'
 
 export class UrRobot {
   private _dictLock
@@ -11,10 +8,19 @@ export class UrRobot {
   private _maxFloatLength: number = 6
 
   constructor(serverIp) {
+    // TODO: should use awaitlock
     this._dictLock = new AwaitLock()
     this._progQueueLock = new AwaitLock()
 
     this._secmon = new UrSecondaryMonitor(serverIp)
+  }
+
+  async connect() {
+    this._secmon.connect()
+  }
+
+  disconnect() {
+    this._secmon.disconnect()
   }
 
   async isRunning() {
@@ -22,6 +28,7 @@ export class UrRobot {
   }
 
   async sendProgram(program) {
+    console.log(program)
     await this._secmon.sendProgram(program)
   }
 
@@ -205,6 +212,7 @@ export class UrRobot {
         tpose[ii] += currLines[ii]
       }
     }
+
     let prog = this.formatMove(command, tpose, acc, vel, 0, 'p')
     await this.sendProgram(prog)
     if (wait) {

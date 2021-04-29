@@ -4,6 +4,7 @@ import { UrSecondaryMonitorParser } from './ur-secmon-parser'
 import { EventEmitter } from 'events'
 import VersionCompare from 'semver-compare'
 import pEvent = require('p-event')
+import { sleep } from './util'
 
 export class UrSecondaryMonitor {
   public socket: PromiseSocket<Socket>
@@ -69,24 +70,24 @@ export class UrSecondaryMonitor {
   }
 
   async getMonitoringData(wait: boolean = false): Promise<any> {
-    wait && this.wait()
+    wait && (await this.wait())
     return this._parser.getData()
   }
 
   async getJointData(wait: boolean = false): Promise<any> {
-    wait && this.wait()
+    wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     return monitoringData?.JointData
   }
 
   async getCatesianData(wait: boolean = false): Promise<any> {
-    wait && this.wait()
+    wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     return monitoringData?.CartesianInfo || {}
   }
 
   async getDigitalOut(nb: number, wait: boolean = false): Promise<boolean> {
-    wait && this.wait()
+    wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     let discreteOutputs = monitoringData?.MasterBoardData?.digitalOutputBits || 0
     let mask = 1 << nb
@@ -94,13 +95,13 @@ export class UrSecondaryMonitor {
   }
 
   async getDigitalOutBits(wait: boolean = false): Promise<any> {
-    wait && this.wait()
+    wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     return monitoringData?.MasterBoardData?.digitalOutputBits || 0
   }
 
   async getDigitialIn(nb: number, wait: boolean = false): Promise<boolean> {
-    wait && this.wait()
+    wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     let discreteInputs = monitoringData?.MasterBoardData?.digitalInputBits || 0
     let mask = 1 << nb
@@ -108,13 +109,13 @@ export class UrSecondaryMonitor {
   }
 
   async getDigitalInBits(wait: boolean = false): Promise<any> {
-    wait && this.wait()
+    wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     return monitoringData?.MasterBoardData?.digitalInputBits || 0
   }
 
   async getAnalogIn(nb: number, wait: boolean = false): Promise<any> {
-    wait && this.wait()
+    wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     if (nb === 0) {
       return monitoringData?.MasterBoardData?.analogInput0 || 0
@@ -124,13 +125,13 @@ export class UrSecondaryMonitor {
   }
 
   async isProgramRunning(wait = false): Promise<boolean> {
-    wait && this.wait()
+    wait && (await this.wait())
     let monitoringData = await this.getMonitoringData()
     return monitoringData?.RobotModeData?.isProgramRunning || false
   }
 
   async isRunning(wait = false): Promise<boolean> {
-    wait && this.wait()
+    wait && (await this.wait())
     let robotMode = VersionCompare(this._parser.getVersion(), '3.0') >= 0 ? 7 : 0
     let monitoringData = await this.getMonitoringData()
     let robotModeData = monitoringData?.RobotModeData || {}
