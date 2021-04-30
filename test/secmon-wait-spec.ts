@@ -4,16 +4,31 @@ import { UrSecondaryMonitor } from '../src/ur-secmon'
 import { sleep } from '../src/util'
 
 describe('UrSecondaryMonitor', function () {
-  describe('#wait()', function () {
-    this.timeout(10000)
-
-    it('should return binary string', async () => {
+  describe('Wait Event', function () {
+    this.timeout(5000)
+    it('should happen timeout of (wait) without any event', async () => {
       var secMon = new UrSecondaryMonitor(ROBOT_IP)
-      await secMon.connect()
+      let timeout = false
+      try {
+        await secMon.wait(3000)
+      } catch (error) {
+        console.log(error)
+        timeout = true
+      }
+      expect(timeout).to.equal(true)
+    })
 
-      await secMon.wait()
+    it('should not happen timeout of (wait) with any event', async () => {
+      var secMon = new UrSecondaryMonitor(ROBOT_IP)
+      setTimeout(() => secMon.emitReceivedEvent(), 2000)
 
-      secMon.disconnect()
+      let timeout = false
+      try {
+        await secMon.wait(3000)
+      } catch (error) {
+        timeout = true
+      }
+      expect(timeout).to.equal(false)
     })
   })
 })

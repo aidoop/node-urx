@@ -4,7 +4,6 @@ import { UrSecondaryMonitorParser } from './ur-secmon-parser'
 import { EventEmitter } from 'events'
 import VersionCompare from 'semver-compare'
 import pEvent = require('p-event')
-import { sleep } from './util'
 
 export class UrSecondaryMonitor {
   public socket: PromiseSocket<Socket>
@@ -29,7 +28,11 @@ export class UrSecondaryMonitor {
     socket.setKeepAlive(true, 60000)
     socket.on('data', data => {
       this._parser.parse(data)
-      this.emitReceivedEvent()
+
+      let parsedData = this._parser.getData()
+      if (parsedData.CartesianInfo) {
+        this.emitReceivedEvent()
+      }
     })
 
     this.socket = new PromiseSocket(socket)
@@ -51,7 +54,6 @@ export class UrSecondaryMonitor {
     await this.socket.write(buf, size || buf.length)
   }
 
-  // TODO: apply mutex and all functions with sendMessage should have an additional decorater like @urscript
   async sendProgram(program: string) {
     program += '\r\n'
     await this.sendMessage(program)

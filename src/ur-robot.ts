@@ -1,6 +1,7 @@
 import AwaitLock from 'await-lock'
 import { mutex } from './decorators'
 import { UrSecondaryMonitor } from './ur-secmon'
+import { sleep } from './util'
 
 export class UrRobot {
   public lock
@@ -15,7 +16,8 @@ export class UrRobot {
   }
 
   async connect() {
-    this._secmon.connect()
+    await this._secmon.connect()
+    await sleep(1000)
   }
 
   disconnect() {
@@ -58,6 +60,12 @@ export class UrRobot {
     await this.sendProgram(prog)
   }
 
+  async setToolDigitalOutput(port, val) {
+    let convVal = val ? 'True' : 'False'
+    var prog = `set_tool_digital_out(${port},${convVal})`
+    await this.sendProgram(prog)
+  }
+
   async getAnalogInput(nb, wait = false) {
     return this._secmon.getAnalogIn(nb, wait)
   }
@@ -80,12 +88,12 @@ export class UrRobot {
 
   async setAnalogOutput(output, val) {
     var prog = `set_analog_out(${output}, ${val})`
-    await this.sendMessage(prog)
+    await this.sendProgram(prog)
   }
 
   async setToolVoltage(val) {
     var prog = `set_tool_voltage(${val})`
-    await this.sendMessage(prog)
+    await this.sendProgram(prog)
   }
 
   async getDist(target, joints = false) {
@@ -93,7 +101,7 @@ export class UrRobot {
   }
 
   async getJointsDist(target) {
-    let joints = await this.getJoints(true)
+    let joints = await this.getj(true)
     let dist = 0
     for (let ii = 0; ii < 6; ii++) {
       dist += (target[ii] - joints[ii]) ** 2
@@ -102,7 +110,7 @@ export class UrRobot {
   }
 
   async getLinesDist(target) {
-    let lines = await this.getLines(true)
+    let lines = await this.getl(true)
     let dist = 0
     let ii = 0
     for (ii = 0; ii < 3; ii++) {
@@ -112,7 +120,7 @@ export class UrRobot {
     return dist ** 0.5
   }
 
-  async getJoints(wait = false) {
+  async getj(wait = false) {
     var joints = await this._secmon.getJointData(wait)
     return [
       joints?.q_actual0,
@@ -124,14 +132,14 @@ export class UrRobot {
     ]
   }
 
-  async getLines(wait = false) {
+  async getl(wait = false) {
     var lines = await this._secmon.getCatesianData(wait)
     return [lines?.X, lines?.Y, lines?.Z, lines?.Rx, lines?.Ry, lines?.Rz]
   }
 
-  async waitForMove(target, threshold = 0, timeout = 5, joints = false) {
+  async waitForMove(target, threshold = null, timeout = 5, joints = false) {
     let startDist = await this.getDist(target, joints)
-    if (threshold === 0) {
+    if (threshold === null) {
       threshold = startDist * 0.8
       if (threshold < 0.001) {
         threshold = 0.001
@@ -144,6 +152,8 @@ export class UrRobot {
       let running = await this.isRunning()
       if (!running) {
         throw new Error('Robot stopped')
+        // console.log('robot stopped')
+        // break
       }
       dist = await this.getDist(target, joints)
       let prgramRunning = await this._secmon.isProgramRunning()
@@ -154,12 +164,17 @@ export class UrRobot {
         count += 1
         if (count > timeout * 10) {
           throw new Error(
-            `Goal not reached but no program has been running for ${timeout} seconds. dist is ${dist}, threshold is ${threshold}, target is ${target}, current pose is ${await this.getLines()}`
+            `Goal not reached but no program has been running for ${timeout} seconds. dist is ${dist}, threshold is ${threshold}, target is ${target}, current pose is ${await this.getl()}`
+            // console.log(
+            //   `Goal not reached but no program has been running for ${timeout} seconds. dist is ${dist}, threshold is ${threshold}, target is ${target}, current pose is ${await this.getl()}`
+            // )
+            // break
           )
         } else {
           count = 0
         }
       }
+      await sleep(100)
     }
   }
 
@@ -168,7 +183,7 @@ export class UrRobot {
       throw new Error('invalid arguements')
     }
     var prog = `speedl([${vel[0]},${vel[1]},${vel[2]},${vel[3]},${vel[4]},${vel[5]}], ${acc}, ${min_time})`
-    await this.sendMessage(prog)
+    await this.sendProgram(prog)
   }
 
   async speedj(vel, acc, min_time) {
@@ -176,7 +191,7 @@ export class UrRobot {
       throw new Error('invalid arguements')
     }
     var prog = `speedj([${vel[0]},${vel[1]},${vel[2]},${vel[3]},${vel[4]},${vel[5]}], ${acc}, ${min_time})`
-    await this.sendMessage(prog)
+    await this.sendProgram(prog)
   }
 
   formatMove(command, tpose, acc, vel, radius = 0, prefix = '') {
@@ -188,7 +203,7 @@ export class UrRobot {
       throw new Error('invalid arguements')
     }
     if (relative) {
-      let currJoints = this.getJoints()
+      let currJoints = await this.getj()
       for (let ii = 0; ii < 6; ii++) {
         joints[ii] += currJoints[ii]
       }
@@ -206,7 +221,7 @@ export class UrRobot {
       throw new Error('invalid arguements')
     }
     if (relative) {
-      let currLines = this.getLines()
+      let currLines = await this.getl()
       for (let ii = 0; ii < 6; ii++) {
         tpose[ii] += currLines[ii]
       }
@@ -215,7 +230,19 @@ export class UrRobot {
     let prog = this.formatMove(command, tpose, acc, vel, 0, 'p')
     await this.sendProgram(prog)
     if (wait) {
-      await this.waitForMove(tpose.slice(0, 6), (threshold = threshold))
+      await this.waitForMove(tpose.slice(0, 6), threshold)
+    }
+  }
+
+  async movexr(command, tpose, acc = 0.01, vel = 0.01, r = 0, wait = true, threshold = null) {
+    if (tpose.length < 6) {
+      throw new Error('invalid arguements')
+    }
+
+    let prog = this.formatMove(command, tpose, acc, vel, r, 'p')
+    await this.sendProgram(prog)
+    if (wait) {
+      await this.waitForMove(tpose.slice(0, 6), threshold)
     }
   }
 
@@ -223,16 +250,16 @@ export class UrRobot {
     return await this.movex('movel', tpose, acc, vel, wait, relative, threshold)
   }
 
-  async movep(tpose, acc = 0.01, vel = 0.01, wait = true, relative = false, threshold = null) {
-    return await this.movex('movep', tpose, acc, vel, wait, relative, threshold)
+  async movep(tpose, acc = 0.01, vel = 0.01, r = 0, wait = true, threshold = null) {
+    return await this.movexr('movep', tpose, acc, vel, r, wait, threshold)
   }
 
-  async servoc(tpose, acc = 0.01, vel = 0.01, wait = true, relative = false, threshold = null) {
-    return await this.movex('servoc', tpose, acc, vel, wait, relative, threshold)
+  async servoc(tpose, acc = 0.01, vel = 0.01, r = 0, wait = true, threshold = null) {
+    return await this.movexr('servoc', tpose, acc, vel, r, wait, threshold)
   }
 
-  async movec(poseVia, poseTo, acc = 0.01, vel = 0.01, wait = true, threshold = null) {
-    let prog = `movec(p[${poseVia[0]}, ${poseVia[1]}, ${poseVia[2]}, ${poseVia[3]}, ${poseVia[4]}, ${poseVia[5]}], p[${poseTo[0]},${poseTo[1]}, ${poseTo[2]}, ${poseTo[3]}, ${poseTo[4]}, ${poseTo[5]}], a=${acc}, v=${vel}, r=0)`
+  async movec(poseVia, poseTo, acc = 0.01, vel = 0.01, r = 0, mode = 0, wait = true, threshold = null) {
+    let prog = `movec(p[${poseVia[0]}, ${poseVia[1]}, ${poseVia[2]}, ${poseVia[3]}, ${poseVia[4]}, ${poseVia[5]}], p[${poseTo[0]},${poseTo[1]}, ${poseTo[2]}, ${poseTo[3]}, ${poseTo[4]}, ${poseTo[5]}], a=${acc}, v=${vel}, r=${r}, mode=${mode})`
     await this.sendProgram(prog)
     if (wait) {
       await this.waitForMove(poseTo, threshold, 5, true)
@@ -255,7 +282,7 @@ export class UrRobot {
     this._secmon.disconnect()
   }
 
-  async setFreeDive(val, timeout = 60) {
+  async setFreeDrive(val, timeout = 60) {
     if (val) {
       await this.sendProgram(`def myProg():\r\n\tfreedrive_mode()\r\n\tsleep(${timeout})\r\nend`)
     } else {
@@ -275,7 +302,7 @@ export class UrRobot {
     if (vect.length < 3) {
       throw new Error('invalid arguements')
     }
-    let pose = this.getLines()
+    let pose = this.getl()
     for (let ii = 0; ii < 3; ii++) {
       pose[ii] += vect[ii]
     }
@@ -283,7 +310,7 @@ export class UrRobot {
   }
 
   async up(z = 0.05, acc = 0.01, vel = 0.01) {
-    let pose = this.getLines()
+    let pose = this.getl()
     pose[2] += z
     this.movel(pose, acc, vel)
   }

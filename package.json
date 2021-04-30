@@ -1,10 +1,10 @@
 {
-  "name": "@aidoop/node-urx",
-  "version": "0.0.1",
+  "name": "@things-factory/node-urx",
+  "version": "0.0.2",
   "description": "",
-  "main": "index.js¸",
+  "main": "build/index.js",
   "scripts": {
-    "test": "npx mocha -r ts-node/register ./test/**/*spec.ts",
+    "test": "npx mocha -r ts-node/register ./test/**/*spec1.ts",
     "clean": "rm -rf build",
     "build": "npm run clean && npx tsc"
   },

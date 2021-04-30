@@ -1,6 +1,3 @@
-import debug from 'debug'
-import PromiseSocket from 'promise-socket'
-import AwaitLock from 'await-lock'
 import PythonStruct from 'python-struct'
 import VersionCompare from 'semver-compare'
 
@@ -332,7 +329,8 @@ export class UrSecondaryMonitorParser {
             'messageText'
           ])
         } else {
-          console.log(`Message type parser not implemented ${robotMessage}`)
+          // too much logs
+          //console.log(`Message type parser not implemented ${robotMessage}`)
         }
       } // (packetType === 20)
       else {
