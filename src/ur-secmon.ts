@@ -27,7 +27,11 @@ export class UrSecondaryMonitor {
     var socket = new Socket()
     socket.setKeepAlive(true, 60000)
     socket.on('data', data => {
-      this._parser.parse(data)
+      try {
+        this._parser.parse(data)
+      } catch (e) {
+        console.error('urx parse error: ', e)
+      }
 
       let parsedData = this._parser.getData()
       if (parsedData.CartesianInfo) {

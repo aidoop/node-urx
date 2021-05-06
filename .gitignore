@@ -1,4 +1,17 @@
-build
+packages/**/dist/
+packages/**/dist-client/
+packages/**/dist-server/
+node_modules/
+uploads/
+attachments/
+extensions/
+*.sqlite
+*.sql
+yarn*.*
+package-lock.json
+.DS_Store
+.vscode
+platforms
 
 # Logs
 logs
