@@ -346,13 +346,13 @@ export class UrSecondaryMonitorParser {
   parseHeaderData(data): { packetSize; packetType; packetData; nextData } {
     let dataSize = data.length
     if (dataSize < 5) {
-      throw `Packet size ${dataSize} smaller than header size (5 bytes)`
+      throw new Error(`Packet size ${dataSize} smaller than header size (5 bytes)`)
     } else {
       var { packetSize, packetType } = this.getHeader(data)
       if (packetSize < 5) {
-        throw `Error, declared length of data smaller than its own header(5): ${packetSize}`
+        throw new Error(`Error, declared length of data smaller than its own header(5): ${packetSize}`)
       } else if (packetSize > dataSize) {
-        throw `Error, length of data smaller ${dataSize} than declared ${packetSize}`
+        throw new Error(`Error, length of data smaller ${dataSize} than declared ${packetSize}`)
       }
     }
 
@@ -391,7 +391,7 @@ export class UrSecondaryMonitorParser {
         } else {
           var asn = names[i - 1]
           if (!asn.endsWith('Size')) {
-            throw `Error, array without size ! ${asn}, ${i}`
+            throw new Error(`Error, array without size ! ${asn}, ${i}`)
           } else {
             arraySize = d[asn]
           }
@@ -403,7 +403,9 @@ export class UrSecondaryMonitorParser {
       } else {
         var fmtSize = PythonStruct.sizeOf(fmt[j])
         if (formatData.length < fmtSize) {
-          throw `Error, length of data smaller than advertized: ${formatData.length}, ${fmtSize}, ${names}, ${f}, ${i}, ${j}`
+          throw new Error(
+            `Error, length of data smaller than advertized: ${formatData.length}, ${fmtSize}, ${names}, ${f}, ${i}, ${j}`
+          )
         }
         d[names[i]] = PythonStruct.unpack('!' + f, formatData.slice(0, fmtSize))[0]
         formatData = formatData.slice(fmtSize)

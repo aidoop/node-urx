@@ -5,14 +5,15 @@ import { sleep } from './util'
 
 export class UrRobot {
   public lock
+  public socket
 
   private _secmon: UrSecondaryMonitor
   private _maxFloatLength: number = 6
 
   constructor(serverIp) {
-    // TODO: should use awaitlock
     this.lock = new AwaitLock()
     this._secmon = new UrSecondaryMonitor(serverIp)
+    this.socket = this._secmon.socket
   }
 
   async connect() {
@@ -28,7 +29,10 @@ export class UrRobot {
     return await this._secmon.isRunning(true)
   }
 
-  @mutex
+  async isProgramRunning() {
+    return await this._secmon.isProgramRunning()
+  }
+
   async sendProgram(program) {
     await this._secmon.sendProgram(program)
   }
@@ -317,5 +321,13 @@ export class UrRobot {
 
   async down(z = 0.05, acc = 0.01, vel = 0.01) {
     this.up(-z, acc, vel)
+  }
+
+  async getStatus() {
+    console.log('called getStatus')
+    return {
+      isBusy: await this.isProgramRunning(),
+      isRun: await this.isRunning()
+    }
   }
 }
