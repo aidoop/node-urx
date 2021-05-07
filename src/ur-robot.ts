@@ -324,7 +324,6 @@ export class UrRobot {
   }
 
   async getStatus() {
-    console.log('called getStatus')
     return {
       isBusy: await this.isProgramRunning(),
       isRun: await this.isRunning()

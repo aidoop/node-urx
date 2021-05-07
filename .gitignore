@@ -12,6 +12,7 @@ package-lock.json
 .DS_Store
 .vscode
 platforms
+build
 
 # Logs
 logs
