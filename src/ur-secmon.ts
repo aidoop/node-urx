@@ -147,16 +147,31 @@ export class UrSecondaryMonitor {
     let robotModeData = monitoringData?.RobotModeData || {}
     if (
       robotModeData?.robotMode === robotMode &&
-      robotModeData.isRealRobotEnabled &&
-      !robotModeData.isEmergencyStopped &&
-      !robotModeData.isSecurityStopped &&
-      robotModeData.isRobotConnected &&
-      robotModeData.isPowerOnRobot
+      robotModeData?.isRealRobotEnabled &&
+      !robotModeData?.isEmergencyStopped &&
+      !robotModeData?.isSecurityStopped &&
+      robotModeData?.isRobotConnected &&
+      robotModeData?.isPowerOnRobot
     ) {
       this._running = true
     } else {
       this._running = false
     }
     return this._running
+  }
+
+  async isEmegencyStop(wait = false): Promise<boolean> {
+    wait && (await this.wait())
+    let monitoringData = await this.getMonitoringData()
+    let robotModeData = monitoringData?.RobotModeData || {}
+    return robotModeData?.isEmergencyStopped || false
+  }
+
+  async isSecurityStop(wait = false): Promise<boolean> {
+    wait && (await this.wait())
+    let robotMode = VersionCompare(this._parser.getVersion(), '3.0') >= 0 ? 7 : 0
+    let monitoringData = await this.getMonitoringData()
+    let robotModeData = monitoringData?.RobotModeData || {}
+    return robotModeData?.isSecurityStopped || false
   }
 }

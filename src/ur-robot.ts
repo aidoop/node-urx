@@ -30,7 +30,15 @@ export class UrRobot {
   }
 
   async isProgramRunning() {
-    return await this._secmon.isProgramRunning()
+    return await this._secmon.isProgramRunning(true)
+  }
+
+  async isEmergencyStop() {
+    return await this._secmon.isEmegencyStop(true)
+  }
+
+  async isSecurityStop() {
+    return await this._secmon.isSecurityStop(true)
   }
 
   async sendProgram(program) {
@@ -326,7 +334,9 @@ export class UrRobot {
   async getStatus() {
     return {
       isBusy: await this.isProgramRunning(),
-      isRun: await this.isRunning()
+      isRun: await this.isRunning(),
+      isEmegencyStop: await this.isEmergencyStop(),
+      isSecurityStop: await this.isSecurityStop()
     }
   }
 }
