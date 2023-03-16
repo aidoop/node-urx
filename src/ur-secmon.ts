@@ -1,9 +1,10 @@
-import { Socket } from 'net'
-import { PromiseSocket } from 'promise-socket'
-import { UrSecondaryMonitorParser } from './ur-secmon-parser'
 import { EventEmitter } from 'events'
-import VersionCompare from 'semver-compare'
+import { Socket } from 'net'
 import pEvent = require('p-event')
+import { PromiseSocket } from 'promise-socket'
+import VersionCompare from 'semver-compare'
+
+import { UrSecondaryMonitorParser } from './ur-secmon-parser'
 
 export class UrSecondaryMonitor {
   public socket: PromiseSocket<Socket>
@@ -55,7 +56,7 @@ export class UrSecondaryMonitor {
   }
 
   async sendMessage(buf, size?) {
-    await this.socket.write(buf, size || buf.length)
+    await this.socket.write(buf)
   }
 
   async sendProgram(program: string) {

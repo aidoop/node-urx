@@ -12,7 +12,8 @@
     "outDir": "./build",
     "sourceMap": true,
     "baseUrl": "./",
-    "lib": ["esnext.asynciterable", "es7", "es2017"]
+    "lib": ["esnext.asynciterable", "es7", "es2017"],
+    "skipLibCheck": true
   },
   "include": ["src"],
   "exclude": ["**/*.spec.ts"]
